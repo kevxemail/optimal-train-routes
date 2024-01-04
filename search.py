@@ -1,3 +1,4 @@
+import heapq
 from setup import id_name_conversion, junction_information
 
 # Global dictionary (hash map) for the id to name conversions
@@ -17,38 +18,47 @@ city_locations = list() # Get the list of strings that tells you the longitude a
 with open("./files/rrNodes.txt") as f:
     city_locations = [line.strip() for line in f]
 
-def djikstra(city1id, city2id):
-    goal = city2id
-    
+name_id = id_name_conversion(id_city) # Initialize the global variables with methods from setup.py
+junction_info = junction_information(junctions, city_locations)
+
+"""
+Calculates the shortest distance between two cities use Djikstra's algorithm. Like BFS, it checks closest nodes to farthest nodes. We use a minheap to grab the next closest city from the initial city1 and add that to the fringe to continue processing. We continue doing this until we get to city2. The set closed is used to make sure we don't go backwards to cities we've already checked. Basically, there's a chance we will add duplicate cities to the fringe with different distances depending how we got there. However, with the closed set we will first process the closest path to that city off the minheap, then add it to the closed set so future ones pulled off the minheap aren't processed
+PARAMS:
+city1: String for the name of city1
+city2: String for the name of city2
+RETURN:
+Distance between the two cities
+"""
+def djikstra(city1, city2): # Basically A* without heuristics 
+    city1_id = name_id[city1]
+    city2_id = name_id[city2]
+    goal = city2_id
+
     closed = set()
-    heuristic = taxicabHeuristic(board, size, positionTracker)
-    start = (heuristic, 0, board) # Starting node, storing in tuples like (f(x) = g(x) + h(x) which is initially just h(x), depth, board)
+    start = (0, city1_id) # Starting node store as (distance from city1, city name)
     fringe = []
-    heapq.heapify(fringe) # This is now a minheap
+    heapq.heapify(fringe) # This is now a minheap so we can grab the closest city for djikstra's which is exhaustive
 
     closed.add(start)
     heapq.heappush(fringe, start)
 
     while (len(fringe) > 0):
-        v = heapq.heappop(fringe) # Pop the minimum off of the board
-        if (v[2] == goalBoard): # If it's the goal board then we're done
+        v = heapq.heappop(fringe) # Pop the closest citys
+        if (v[1] == city2_id): # If it's the goal city then we're done
             return v
-        if (v[2] not in closed): # Check if we've already found the shortest path for this particular node
-            closed.add(v[2]) # We add items to the set closed after removing it from the fringe instead of when we add 
-            for child in get_children(v[2], size):
-                if (child not in closed):
-                    depth = v[1] + 1 # It is one more depth than its parent, g(x)
-                    heuristic = taxicabHeuristic(v[2], size, positionTracker) # Get the heuristic value, h(x)
-                    temp = (heuristic + depth, depth, child)
-                    heapq.heappush(fringe, temp)
+        if (v[1] not in closed): # Check if we've already found the shortest path for this particular node
+            closed.add(v[1]) # We add items to the set closed after removing it from the fringe instead of when we add to guarantee we are getting the shortest path. Might add the goal city to the fringe multiple times but becaue of the heap we are popping the shortest distanced one guaranteed
+            for child in junction_info[v[1]]: # Traverse through each city this is connected with
+                if (child not in closed): # Don't want to go backwards to something we've already visited
+                    distance, city_id = child # Unpack the tuple
+                    depth = v[0] + distance # New calculated distance from city 1 
+                    curr_node = (depth, city_id)
+                    heapq.heappush(fringe, curr_node)
     return None
 
 def main():
 
-
-
-    name_id = id_name_conversion(id_city) 
-    junction_info = junction_information(junctions, city_locations)
+    print(djikstra("Albuquerque", "Atlanta"))
 
 if __name__ == "__main__":
     main()
