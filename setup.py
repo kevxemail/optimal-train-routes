@@ -1,8 +1,4 @@
-from heuristic import calcd # Get the method we need for distances between cities
-# Global dictionary (hash map) for the id to name conversions
-id_name = dict() # Form of {id: name}
-# Global data structure to see which city goes to which city for train routes.
-junction_info = dict() # This will be of the form {city_id: [(distance, city), (distance, city), etc...]}
+from great_circle_distance import calcd # Get the method we need for distances between cities
 
 """
 Fill out a dictionary with id to city conversions in the form of {id: name}
@@ -11,12 +7,12 @@ id_city: List of strings with the format "xxxxxxx cityName" for each index
 RETURN: void
 """
 def id_name_conversion(id_city):
-    id_name = dict()
+    name_id = dict()
     for conversion in id_city:
         conversion = conversion.split() # Split the id and name into two seperate variables
         id, name = conversion[0], conversion[1]
-        id_name[id] = name
-    return id_name
+        name_id[name] = id
+    return name_id
 
 """
 AFTER the id_name dictionary is correctly filled out, utilize this method to fill out junctions so that
@@ -54,22 +50,3 @@ def junction_information(junctions, city_locations):
         junction_info[city_id2].append((distance, city_id1)) # Trains can go both ways
 
     return junction_info
-
-def main():
-    id_city  = list() # Get the list of strings of id to city information
-    with open("./files/rrNodeCity.txt") as f:
-        id_city = [line.strip() for line in f]
-
-    junctions = list() # Get the list of strings that tells you which junction leads to which
-    with open("./files/rrEdges.txt") as f:
-        junctions = [line.strip() for line in f]
-
-    city_locations = list() # Get the list of strings that tells you the longitude and latitude of each city
-    with open("./files/rrNodes.txt") as f:
-        city_locations = [line.strip() for line in f]
-    
-    id_name = id_name_conversion(id_city)
-    junction_info = junction_information(junctions, city_locations)
-
-if __name__ == "__main__":
-    main()
