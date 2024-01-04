@@ -57,15 +57,15 @@ def junction_information(junctions, city_locations):
 
 def main():
     id_city  = list() # Get the list of strings of id to city information
-    with open("rrNodeCity.txt") as f:
+    with open("./files/rrNodeCity.txt") as f:
         id_city = [line.strip() for line in f]
 
     junctions = list() # Get the list of strings that tells you which junction leads to which
-    with open("rrEdges.txt") as f:
+    with open("./files/rrEdges.txt") as f:
         junctions = [line.strip() for line in f]
 
     city_locations = list() # Get the list of strings that tells you the longitude and latitude of each city
-    with open("rrNodes.txt") as f:
+    with open("./files/rrNodes.txt") as f:
         city_locations = [line.strip() for line in f]
     
     id_name = id_name_conversion(id_city)
