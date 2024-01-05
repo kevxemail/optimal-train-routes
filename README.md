@@ -5,4 +5,7 @@
 - Additionally has the option to see how other searching algorithms such as Djikstra's, BFS, and DFS perform
 
 
-![alt text](https://github.com/kevxemail@gmail.com/optimal-train-routes/blob/main/LA-Montreal.png?raw=true)
+IMAGE EXAMPLE:
+Red lines = areas explored
+Blue line = shortest path
+![alt text](https://raw.githubusercontent.com/kevxemail/optimal-train-routes/main/LA-Montreal.png)
