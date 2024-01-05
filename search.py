@@ -12,6 +12,9 @@ Calculates the shortest distance between two cities use Djikstra's algorithm. Li
 PARAMS:
 city1: String for the name of city1
 city2: String for the name of city2
+lines: The stored lines we drew for the train routes for the United States
+r: Root to update the tkinter GUI
+c: Canvas to change line colors as we search and find the correct path
 RETURN:
 Distance between the two cities
 """
@@ -65,6 +68,8 @@ Heuristic which estimates the distance from city1 to city2 pretending that there
 PARAMETERS:
 city1_id: id for city1
 city2_id: id for city2
+RETURN:
+The distance between the two cities as if it were a straight shot
 """
 def circle_heuristic(city1_id, city2_id):
     return calcd(city_loc_processed[city1_id], city_loc_processed[city2_id])
@@ -74,6 +79,9 @@ Similar logic to code above but with a heuristic
 PARAMS:
 city1: String for the name of city1
 city2: String for the name of city2
+lines: The stored lines we drew for the train routes for the United States
+r: Root to update the tkinter GUI
+c: Canvas to change line colors as we search and find the correct path
 RETURN:
 Distance between the two cities
 """
