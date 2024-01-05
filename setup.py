@@ -1,6 +1,5 @@
 from great_circle_distance import calcd # Get the method we need for distances between cities
 
-
 """
 Returns a dictionary mapping city to a tuple of its coordinates
 PARAMTERS:
@@ -66,3 +65,25 @@ def junction_information(junctions, city_loc_processed):
     return junction_info
 
 
+# Global dictionary (hash map) for the id to name conversions
+name_id = dict() # Form of {name: id}
+# Global data structure to see which city goes to which city for train routes.
+junction_info = dict() # This will be of the form {city_id: [(distance, city_id), (distance, city_id), etc...]}
+# Global dictionary mapping city id to its latitude/longitude
+city_loc_processed = dict()
+
+id_city  = list() # Get the list of strings of id to city information
+with open("./files/rrNodeCity.txt") as f:
+    id_city = [line.strip() for line in f]
+
+junctions = list() # Get the list of strings that tells you which junction leads to which
+with open("./files/rrEdges.txt") as f:
+    junctions = [line.strip() for line in f]
+
+city_locations = list() # Get the list of strings that tells you the longitude and latitude of each city
+with open("./files/rrNodes.txt") as f:
+    city_locations = [line.strip() for line in f]
+
+city_loc_processed = id_coordinates(city_locations)
+name_id = id_name_conversion(id_city) # Initialize the global variables with methods from setup.py
+junction_info = junction_information(junctions, city_loc_processed)
