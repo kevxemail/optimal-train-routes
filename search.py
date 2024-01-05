@@ -237,6 +237,70 @@ def DFS(city1, city2, lines, r, c):
                 c.itemconfig(line, fill="red")
         loop_count += 1
     return None
+"""
+Actual searching algo for ID-DFS
+"""
+def k_DFS(city1_id, city2_id, lines, r, c, k):
+
+    visited = set()
+
+    fringe = collections.deque()
+
+    parents = dict() # Use to keep track of the parent so we can go back at the end with the correct path
+
+    visited.add(city1_id)
+    fringe.append((city1_id, 0))
+    loop_count = 0 # Use this to determine when we should update the root (r).
+    while (len(fringe) > 0):
+        if loop_count == 600:
+            r.update()
+            loop_count = 0
+        v = fringe.pop()
+        if (v[0] == city2_id): # If it's the goal city then we're done
+            curr = v
+            while (curr in parents): # Keep going until we reach the start node again
+                c1 = parents[curr][0]
+                c2 = curr[0]
+                line = lines[c1, c2]
+                c.itemconfig(line, fill="blue")
+                curr = parents[curr]
+            r.update() # Update the GUI one last time before returning
+            return v
+        if (v[1] > k):
+            return None
+        for child in junction_info[v[0]]:
+            distance, city_id = child
+            if (city_id not in visited):
+                temp = (city_id, distance + v[1])
+                visited.add(city_id)
+                fringe.append(temp)
+                parents[temp] = v
+                line = lines[v[0], city_id] # Color the explored line red
+                c.itemconfig(line, fill="red")
+        loop_count += 1
+    return None
+
+"""
+Finds a path with ID-DFS. Not guaranteed to be shortest.
+PARAMS:
+city1: String for the name of city1
+city2: String for the name of city2
+lines: The stored lines we drew for the train routes for the United States
+r: Root to update the tkinter GUI
+c: Canvas to change line colors as we search and find the correct path
+RETURN:
+Distance between the two cities
+"""
+def ID_DFS(city1, city2, lines, r, c): 
+    city1_id = name_id[city1]
+    city2_id = name_id[city2]
+    temp = circle_heuristic(city1_id, city2_id)
+    max_depth = temp
+    result = None
+    while (result is None):
+        result = k_DFS(city1_id, city2_id, lines, r, c, max_depth)
+        max_depth = max_depth + temp
+    return result
 
 def main():
     city1 = sys.argv[1]
@@ -248,12 +312,13 @@ def main():
     canvas.pack(expand=True) #packing widgets places them on the board
 
     algo = ""
-    while (algo != "BFS" and algo != "DFS" and algo != "djikstra" and algo != "a-star"):
+    while (algo != "BFS" and algo != "DFS" and algo != "djikstra" and algo != "a-star" and algo != "ID-DFS"):
         print("Type the algorithm you would like to use:")
         print("'a-star' for A* Search")
         print("'djikstra' for Djikstra's Algorithm")
         print("'BFS' for BFS search")
         print("'DFS' for DFS Search")
+        print("'ID-DFS' for Iterative Deepening DFS search")
         algo = input()
     print("Click enter to begin searching")
     input()
@@ -265,6 +330,8 @@ def main():
         print(AStar(city1, city2, lines, root, canvas))
     if (algo == "djikstra"):
         print(djikstra(city1, city2, lines, root, canvas))
+    if (algo == "ID-DFS"):
+        print(ID_DFS(city1, city2, lines, root, canvas))
     root.mainloop()
 
     """
