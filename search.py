@@ -1,3 +1,4 @@
+import collections
 import heapq
 import sys
 from setup import name_id, junction_info, city_loc_processed
@@ -33,7 +34,7 @@ def djikstra(city1, city2, lines, r, c): # Basically A* without heuristics
 
     loop_count = 0 # Use this to determine when we should update the root (r).
     while (len(fringe) > 0):
-        if loop_count == 500:
+        if loop_count == 600:
             r.update()
             loop_count = 0
         v = heapq.heappop(fringe) # Pop the closest citys
@@ -75,7 +76,7 @@ def circle_heuristic(city1_id, city2_id):
     return calcd(city_loc_processed[city1_id], city_loc_processed[city2_id])
 
 """
-Similar logic to code above but with a heuristic
+Finds the shortest path with A* search. Similar logic to code above but with a heuristic
 PARAMS:
 city1: String for the name of city1
 city2: String for the name of city2
@@ -102,20 +103,18 @@ def AStar(city1, city2, lines, r, c): # Same algo as above but we add a heuristi
     heapq.heappush(fringe, start)
     loop_count = 0 # Use this to determine when we should update the root (r).
     while (len(fringe) > 0):
-        if loop_count == 5:
+        if loop_count == 600:
             r.update()
             loop_count = 0
         v = heapq.heappop(fringe) # Pop the closest citys
         if (v[2] == city2_id): # If it's the goal city then we're done
             curr = v
-            loop_count = 0
             while (curr in parents): # Keep going until we reach the start node again
                 c1 = parents[curr][2]
                 c2 = curr[2]
                 line = lines[c1, c2]
                 c.itemconfig(line, fill="blue")
                 curr = parents[curr]
-                loop_count += 1
             r.update() # Update the GUI one last time before returning
             return v
         if (v[2] not in closed): # Check if we've already found the shortest path for this particular node
@@ -131,9 +130,112 @@ def AStar(city1, city2, lines, r, c): # Same algo as above but we add a heuristi
                     parents[curr_node] = v
                     heapq.heappush(fringe, curr_node)
                     loop_count += 1
-                    if loop_count == 500: # Unlike djikstra's I'm also having the GUI update here because A* is too fast to observe otherwise
+                    if loop_count == 600: # Unlike djikstra's I'm also having the GUI update here because A* is too fast to observe otherwise
                         r.update()
                         loop_count = 0
+    return None
+
+
+"""
+Finds a path with BFS. Not guaranteed to be shortest.
+PARAMS:
+city1: String for the name of city1
+city2: String for the name of city2
+lines: The stored lines we drew for the train routes for the United States
+r: Root to update the tkinter GUI
+c: Canvas to change line colors as we search and find the correct path
+RETURN:
+Distance between the two cities
+"""
+def BFS(city1, city2, lines, r, c):
+
+    city1_id = name_id[city1]
+    city2_id = name_id[city2]
+
+    visited = set()
+
+    fringe = collections.deque()
+
+    parents = dict() # Use to keep track of the parent so we can go back at the end with the correct path
+
+    visited.add(city1_id)
+    fringe.append(city1_id)
+    loop_count = 0 # Use this to determine when we should update the root (r).
+    while (len(fringe) > 0):
+        if loop_count == 600:
+            r.update()
+            loop_count = 0
+        v = fringe.popleft()
+        if (v == city2_id): # If it's the goal city then we're done
+            curr = v
+            while (curr in parents): # Keep going until we reach the start node again
+                c1 = parents[curr]
+                c2 = curr
+                line = lines[c1, c2]
+                c.itemconfig(line, fill="blue")
+                curr = parents[curr]
+            r.update() # Update the GUI one last time before returning
+            return v
+        for child in junction_info[v]:
+            distance, city_id = child
+            if (city_id not in visited):
+                visited.add(city_id)
+                fringe.append(city_id)
+                parents[city_id] = v
+                line = lines[v, city_id] # Color the explored line red
+                c.itemconfig(line, fill="red")
+        loop_count += 1
+    return None
+
+"""
+Finds a path with DFS. Not guaranteed to be shortest.
+PARAMS:
+city1: String for the name of city1
+city2: String for the name of city2
+lines: The stored lines we drew for the train routes for the United States
+r: Root to update the tkinter GUI
+c: Canvas to change line colors as we search and find the correct path
+RETURN:
+Distance between the two cities
+"""
+def DFS(city1, city2, lines, r, c):
+
+    city1_id = name_id[city1]
+    city2_id = name_id[city2]
+
+    visited = set()
+
+    fringe = collections.deque()
+
+    parents = dict() # Use to keep track of the parent so we can go back at the end with the correct path
+
+    visited.add(city1_id)
+    fringe.append(city1_id)
+    loop_count = 0 # Use this to determine when we should update the root (r).
+    while (len(fringe) > 0):
+        if loop_count == 600:
+            r.update()
+            loop_count = 0
+        v = fringe.pop()
+        if (v == city2_id): # If it's the goal city then we're done
+            curr = v
+            while (curr in parents): # Keep going until we reach the start node again
+                c1 = parents[curr]
+                c2 = curr
+                line = lines[c1, c2]
+                c.itemconfig(line, fill="blue")
+                curr = parents[curr]
+            r.update() # Update the GUI one last time before returning
+            return v
+        for child in junction_info[v]:
+            distance, city_id = child
+            if (city_id not in visited):
+                visited.add(city_id)
+                fringe.append(city_id)
+                parents[city_id] = v
+                line = lines[v, city_id] # Color the explored line red
+                c.itemconfig(line, fill="red")
+        loop_count += 1
     return None
 
 def main():
@@ -144,9 +246,25 @@ def main():
     canvas = tk.Canvas(root, height=1000, width=1000, bg='white') #creates a canvas widget, which can be used for drawing lines and shapes
     lines = create_map(root, canvas)
     canvas.pack(expand=True) #packing widgets places them on the board
+
+    algo = ""
+    while (algo != "BFS" and algo != "DFS" and algo != "djikstra" and algo != "a-star"):
+        print("Type the algorithm you would like to use:")
+        print("'a-star' for A* Search")
+        print("'djikstra' for Djikstra's Algorithm")
+        print("'BFS' for BFS search")
+        print("'DFS' for DFS Search")
+        algo = input()
     print("Click enter to begin searching")
     input()
-    print(djikstra(city1, city2, lines, root, canvas))
+    if (algo == "BFS"):
+        print(BFS(city1, city2, lines, root, canvas))
+    if (algo == "DFS"):
+        print(DFS(city1, city2, lines, root, canvas))
+    if (algo == "a-star"):
+        print(AStar(city1, city2, lines, root, canvas))
+    if (algo == "djikstra"):
+        print(djikstra(city1, city2, lines, root, canvas))
     root.mainloop()
 
     """
