@@ -137,6 +137,66 @@ def AStar(city1, city2, lines, r, c): # Same algo as above but we add a heuristi
 
 
 """
+Reverse A*. It performs as bad as it sounds. Use a maxheap instead of a minheap
+PARAMS:
+city1: String for the name of city1
+city2: String for the name of city2
+lines: The stored lines we drew for the train routes for the United States
+r: Root to update the tkinter GUI
+c: Canvas to change line colors as we search and find the correct path
+RETURN:
+Distance between the two cities
+"""
+def ReverseAStar(city1, city2, lines, r, c): # Same algo as above but we add a heuristic
+
+    city1_id = name_id[city1]
+    city2_id = name_id[city2]
+
+    closed = set()
+    heuristic = circle_heuristic(city1_id, city2_id)
+    start = (-1 * heuristic, 0, city1_id) # Starting node store as (distance from city1, city name)
+    fringe = []
+    heapq.heapify(fringe) # This is now a minheap so we can grab the closest city for djikstra's which is exhaustive
+
+    parents = dict() # Use to keep track of the parent so we can go back at the end with the correct path
+
+    closed.add(start)
+    heapq.heappush(fringe, start)
+    loop_count = 0 # Use this to determine when we should update the root (r).
+    while (len(fringe) > 0):
+        if loop_count == 600:
+            r.update()
+            loop_count = 0
+        v = heapq.heappop(fringe) # Pop the closest citys
+        if (v[2] == city2_id): # If it's the goal city then we're done
+            curr = v
+            while (curr in parents): # Keep going until we reach the start node again
+                c1 = parents[curr][2]
+                c2 = curr[2]
+                line = lines[c1, c2]
+                c.itemconfig(line, fill="blue")
+                curr = parents[curr]
+            r.update() # Update the GUI one last time before returning
+            return v
+        if (v[2] not in closed): # Check if we've already found the shortest path for this particular node
+            closed.add(v[2]) # We add items to the set closed after removing it from the fringe instead of when we add to guarantee we are getting the shortest path. Might add the goal city to the fringe multiple times but becaue of the heap we are popping the shortest distanced one guaranteed
+            for child in junction_info[v[2]]: # Traverse through each city this is connected with
+                if (child not in closed): # Don't want to go backwards to something we've already visited
+                    distance, city_id = child # Unpack the tuple
+                    heuristic = circle_heuristic(city_id, city2_id) # Heuristic calculation
+                    depth = v[1] + distance # New calculated distance from city 1, taking into account the new distance from the parent to this child
+                    line = lines[v[2], city_id] # Color the explored line red
+                    c.itemconfig(line, fill="red")
+                    curr_node = (-1 * (heuristic + depth), depth, city_id) # Create new node to put on fringe
+                    parents[curr_node] = v
+                    heapq.heappush(fringe, curr_node)
+                    loop_count += 1
+                    if loop_count == 600: # Unlike djikstra's I'm also having the GUI update here because A* is too fast to observe otherwise
+                        r.update()
+                        loop_count = 0
+    return None
+
+"""
 Finds a path with BFS. Not guaranteed to be shortest.
 PARAMS:
 city1: String for the name of city1
@@ -312,13 +372,14 @@ def main():
     canvas.pack(expand=True) #packing widgets places them on the board
 
     algo = ""
-    while (algo != "BFS" and algo != "DFS" and algo != "djikstra" and algo != "a-star" and algo != "ID-DFS"):
+    while (algo != "BFS" and algo != "DFS" and algo != "djikstra" and algo != "a-star" and algo != "ID-DFS" and algo != "Reverse AStar"):
         print("Type the algorithm you would like to use:")
         print("'a-star' for A* Search")
         print("'djikstra' for Djikstra's Algorithm")
         print("'BFS' for BFS search")
         print("'DFS' for DFS Search")
         print("'ID-DFS' for Iterative Deepening DFS search")
+        print("'Reverse AStar' for Reverse A* Search")
         algo = input()
     print("Click enter to begin searching")
     input()
@@ -332,6 +393,8 @@ def main():
         print(djikstra(city1, city2, lines, root, canvas))
     if (algo == "ID-DFS"):
         print(ID_DFS(city1, city2, lines, root, canvas))
+    if (algo == "Reverse AStar"):
+        print(ReverseAStar(city1, city2, lines, root, canvas))
     root.mainloop()
 
     """
