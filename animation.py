@@ -1,16 +1,37 @@
 from setup import name_id, junction_info, city_loc_processed
 import tkinter as tk
 
+"""
+Transforms the Y coordinates to be standardized for tkinter
+PARAMETERS: 
+Coordinate - the coordinate to transform
+RETURN:
+The transformed coordinate
+"""
 def transform_coordinate_y(coordinate): # Fiddled with these until it looked good
     coordinate = 14 * coordinate 
     return coordinate
 
+"""
+Transforms the X coordinates to be standardized for tkinter
+PARAMETERS: 
+Coordinate - the coordinate to transform
+RETURN:
+The transformed coordinate
+"""
 def transform_coordinate_x(coordinate):
     coordinate = 13 * coordinate
     coordinate = coordinate * -1
     return coordinate
 
-
+"""
+Initializes the tkinter map of train routes in the United States
+PARAMETERS: 
+r: root for tkinter to update the graphic once the map has been generated
+c: tkinter canvas to draw the lines
+RETURN:
+Dictionary mapping two city ids in a tuple to a line
+"""
 def create_map(r, c): # Create empty map of the united states
     lines = dict()
     for city_id in junction_info:
