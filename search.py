@@ -19,7 +19,7 @@ c: Canvas to change line colors as we search and find the correct path
 RETURN:
 Distance between the two cities
 """
-def djikstra(city1, city2, lines, r, c): # Basically A* without heuristics 
+def dijkstra(city1, city2, lines, r, c): # Basically A* without heuristics 
     city1_id = name_id[city1]
     city2_id = name_id[city2]
     closed = set()
@@ -29,7 +29,6 @@ def djikstra(city1, city2, lines, r, c): # Basically A* without heuristics
 
     parents = dict() # Use to keep track of the parent so we can go back at the end with the correct path
 
-    closed.add(start)
     heapq.heappush(fringe, start)
 
     loop_count = 0 # Use this to determine when we should update the root (r).
@@ -40,7 +39,6 @@ def djikstra(city1, city2, lines, r, c): # Basically A* without heuristics
         v = heapq.heappop(fringe) # Pop the closest citys
         if (v[1] == city2_id): # If it's the goal city then we're done
             curr = v
-            loop_count = 0
             while (curr in parents): # Keep going until we reach the start node again
                 c1 = parents[curr][1]
                 c2 = curr[1]
@@ -64,9 +62,38 @@ def djikstra(city1, city2, lines, r, c): # Basically A* without heuristics
         loop_count += 1
     r.update()   
     return None
+"""
+Helper method to Bidirectional Dijkstra to color the path blue given the two "parent" dictionaries
+PARAMS:
+Parents: Dictionary contain what city was visited from what city starting from city1
+Parents2: Dictionary contain what city was visited from what city starting from city2
+city1_id: ID for city1
+city2_id: ID for city2
+v: The node we ended at with bidirectional dijkstra search
+lines: The stored lines we drew for the train routes for the United States
+c: Canvas to change line colors as we search and find the correct path
+RETURN:
+Void
+"""
+def processDictionaries(parents, parents2, v, lines, city1_id, city2_id, c):
+    temp = v # The node we ended on which is the first node encountered in both
+    while (temp in parents):
+        c1 = parents[temp][1]
+        c2 = temp[1]
+        line = lines[c1, c2]
+        c.itemconfig(line, fill="blue")
+        temp = parents[temp]
+
+    temp = v
+    while (temp in parents2):
+        c1 = parents2[temp][1]
+        c2 = temp[1]
+        line = lines[c1, c2]
+        c.itemconfig(line, fill="blue")
+        temp = parents2[temp]
 
 """
-Calculates the shortest distance between two cities use Bidirectional Djikstra's algorithm. One starts from the beginning and one starts from the end
+Bidirectional Dijkstra. Similar to dijkstra but we also search starting from the goal city backwards. Whenever they cross in their closed set we have finished.
 PARAMS:
 city1: String for the name of city1
 city2: String for the name of city2
@@ -76,57 +103,75 @@ c: Canvas to change line colors as we search and find the correct path
 RETURN:
 Distance between the two cities
 """
-def BidirectionalDjikstra(city1, city2, lines, r, c): # Basically A* without heuristics 
+def bidirectional_dijkstra(city1, city2, lines, r, c): # Basically A* without heuristics 
     city1_id = name_id[city1]
     city2_id = name_id[city2]
     closed = set()
     start = (0, city1_id) # Starting node store as (distance from city1, city name, parent)
     fringe = []
     heapq.heapify(fringe) # This is now a minheap so we can grab the closest city for djikstra's which is exhaustive
+
     parents = dict() # Use to keep track of the parent so we can go back at the end with the correct path
-    closed.add(start)
     heapq.heappush(fringe, start)
 
     closed2 = set()
     start2 = (0, city2_id)
     fringe2 = []
     heapq.heapify(fringe2)
-    parents = dict()
-    closed2.add(start2)
+
+    parents2 = dict()
     heapq.heappush(fringe2, start2)
 
     loop_count = 0 # Use this to determine when we should update the root (r).
     while (len(fringe) > 0):
-        if loop_count == 600:
-            r.update()
-            loop_count = 0
-        v = heapq.heappop(fringe) # Pop the closest citys
-        if (v[1] == city2_id): # If it's the goal city then we're done
-            curr = v
-            loop_count = 0
-            while (curr in parents): # Keep going until we reach the start node again
-                c1 = parents[curr][1]
-                c2 = curr[1]
-                line = lines[c1, c2]
-                c.itemconfig(line, fill="blue")
-                curr = parents[curr]
-                loop_count += 1
-            r.update() # Update the GUI one last time before returning
-            return v
-        if (v[1] not in closed): # Check if we've already found the shortest path for this particular node
-            closed.add(v[1]) # We add items to the set closed after removing it from the fringe instead of when we add to guarantee we are getting the shortest path. Might add the goal city to the fringe multiple times but becaue of the heap we are popping the shortest distanced one guaranteed
-            for child in junction_info[v[1]]: # Traverse through each city this is connected with
-                if (child not in closed): # Don't want to go backwards to something we've already visited
-                    distance, city_id = child # Unpack the tuple
-                    depth = v[0] + distance # New calculated distance from city 1 
-                    curr_node = (depth, city_id)
-                    line = lines[v[1], city_id] # Color the explored line red
-                    c.itemconfig(line, fill="red")
-                    parents[curr_node] = v # Create a way to backtrack to find the parent
-                    heapq.heappush(fringe, curr_node)
-        loop_count += 1
+        layerSize = len(fringe)
+        while layerSize > 0:
+            if loop_count == 300:
+                r.update()
+                loop_count = 0
+            v = heapq.heappop(fringe) # Pop the closest citys
+            if (v[1] in closed2): # If it's the goal city then we're done
+                processDictionaries(parents, parents2, v, lines, city1_id, city2_id, c)
+                r.update() # Update the GUI one last time before returning
+                return v
+            if (v[1] not in closed): # Check if we've already found the shortest path for this particular node
+                closed.add(v[1]) # We add items to the set closed after removing it from the fringe instead of when we add to guarantee we are getting the shortest path. Might add the goal city to the fringe multiple times but becaue of the heap we are popping the shortest distanced one guaranteed
+                for child in junction_info[v[1]]: # Traverse through each city this is connected with
+                    if (child not in closed): # Don't want to go backwards to something we've already visited
+                        distance, city_id = child # Unpack the tuple
+                        depth = v[0] + distance # New calculated distance from city 1 
+                        curr_node = (depth, city_id)
+                        line = lines[v[1], city_id] # Color the explored line red
+                        c.itemconfig(line, fill="red")
+                        parents[curr_node] = v # Create a way to backtrack to find the parent
+                        heapq.heappush(fringe, curr_node)
+            loop_count += 1
+            layerSize -= 1
+        layerSize = len(fringe2)
+        while layerSize > 0:
+            if loop_count == 600:
+                r.update()
+                loop_count = 0
+            v = heapq.heappop(fringe2)
+            if v[1] in closed:
+                processDictionaries(parents, parents2, v, lines, city1_id, city2_id, c)
+                r.update()
+                return v
+            if v[1] not in closed2:
+                closed2.add(v[1])
+                for child in junction_info[v[1]]:
+                    if child not in closed2:
+                        distance, city_id = child
+                        depth = v[0] + distance
+                        curr_node = (depth, city_id)
+                        line = lines[v[1], city_id]
+                        c.itemconfig(line, fill="red")
+                        parents2[curr_node] = v
+                        heapq.heappush(fringe2, curr_node)
+
     r.update()   
     return None
+
 
 """
 Heuristic which estimates the distance from city1 to city2 pretending that there is a straight shot between them. This is guaranteed to underestimate or be equal to the actual distance which is good.
@@ -436,7 +481,7 @@ def main():
     canvas.pack(expand=True) #packing widgets places them on the board
 
     algo = ""
-    while (algo != "BFS" and algo != "DFS" and algo != "djikstra" and algo != "a-star" and algo != "ID-DFS" and algo != "Reverse AStar"):
+    while (algo != "BFS" and algo != "DFS" and algo != "dijkstra" and algo != "a-star" and algo != "ID-DFS" and algo != "Reverse AStar" and algo != "BiDijkstra"):
         print("Type the algorithm you would like to use:")
         print("'a-star' for A* Search")
         print("'djikstra' for Djikstra's Algorithm")
@@ -444,6 +489,7 @@ def main():
         print("'DFS' for DFS Search")
         print("'ID-DFS' for Iterative Deepening DFS search")
         print("'Reverse AStar' for Reverse A* Search")
+        print("'BiDijkstra' for Bidirectional Djikstra")
         algo = input()
     print("Click enter to begin searching")
     input()
@@ -453,12 +499,14 @@ def main():
         print(DFS(city1, city2, lines, root, canvas))
     if (algo == "a-star"):
         print(AStar(city1, city2, lines, root, canvas))
-    if (algo == "djikstra"):
-        print(djikstra(city1, city2, lines, root, canvas))
+    if (algo == "dijkstra"):
+        print(dijkstra(city1, city2, lines, root, canvas))
     if (algo == "ID-DFS"):
         print(ID_DFS(city1, city2, lines, root, canvas))
     if (algo == "Reverse AStar"):
         print(ReverseAStar(city1, city2, lines, root, canvas))
+    if (algo == "BiDijkstra"):
+        print(bidirectional_dijkstra(city1, city2, lines, root, canvas))
     root.mainloop()
 
     """
